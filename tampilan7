@@ -1,0 +1,108 @@
+#MUHAMMAD ZUFAR RASYAD- 064102400017
+# %matplotlib inline
+
+from scipy.stats import norm, expon
+import matplotlib.pyplot as plt
+import numpy as np
+import ipywidgets as widgets
+from IPython.display import display, Markdown, clear_output
+
+# Widget untuk memilih distribusi
+dist_selector = widgets.Dropdown(
+    options=['Normal', 'Eksponensial'],
+    value='Normal',
+    description='Distribusi:',
+    style={'description_width': 'initial'}
+)
+
+# Widgets untuk distribusi Normal
+mu_input = widgets.FloatText(value=165.0, description='Rata-rata (μ):')
+sigma_input = widgets.FloatText(value=16.0, description='Standar deviasi (σ):')
+x_input_norm = widgets.FloatText(value=170.0, description='Nilai x:')
+q_slider_norm = widgets.FloatSlider(value=0.9, min=0, max=1.0, step=0.01, description='Prob. Kuantil')
+
+# Widgets untuk distribusi Eksponensial
+lambda_input = widgets.FloatText(value=175.0, description='Lambda (1/μ):')
+x_input_exp = widgets.FloatText(value=3.0, description='Nilai x:')
+q_slider_exp = widgets.FloatSlider(value=0.9, min=0, max=1.0, step=0.01, description='Prob. Kuantil')
+
+# Output
+output = widgets.Output()
+
+def plot_normal(mu, sigma, x, q):
+    x_vals = np.linspace(mu - 4*sigma, mu + 4*sigma, 500)
+    y_vals = norm.pdf(x_vals, loc=mu, scale=sigma)
+
+    fig, ax = plt.subplots()
+    ax.plot(x_vals, y_vals, label='PDF')
+    ax.fill_between(x_vals, y_vals, where=(x_vals < x), color='skyblue', alpha=0.5, label=f'P(X ≤ {x})')
+    ax.axvline(norm.ppf(q, loc=mu, scale=sigma), color='red', linestyle='--', label=f'x untuk P(X ≤ x) = {q}')
+    ax.set_title('Distribusi Normal')
+    ax.legend()
+    plt.grid()
+    plt.show()
+
+def plot_expon(lam, x, q):
+    x_vals = np.linspace(0, x + 5 / lam, 500)
+    y_vals = expon.pdf(x_vals, scale=1 / lam)
+
+    fig, ax = plt.subplots()
+    ax.plot(x_vals, y_vals, label='PDF')
+    ax.fill_between(x_vals, y_vals, where=(x_vals <= x), color='lightgreen', alpha=0.5, label=f'P(X ≤ {x})')
+    ax.axvline(expon.ppf(q, scale=1 / lam), color='red', linestyle='--', label=f'x untuk P(X ≤ x) = {q}')
+    ax.set_title('Distribusi Eksponensial')
+    ax.legend()
+    plt.grid()
+    plt.show()
+
+# Fungsi update berdasarkan distribusi
+def update_ui(*args):
+    output.clear_output()
+    display(dist_selector)
+
+    with output:
+        if dist_selector.value == 'Normal':
+            display(mu_input, sigma_input, x_input_norm, q_slider_norm)
+            mu = mu_input.value
+            sigma = sigma_input.value
+            x = x_input_norm.value
+            q = q_slider_norm.value
+
+            p = norm.cdf(x, loc=mu, scale=sigma)
+            xq = norm.ppf(q, loc=mu, scale=sigma)
+
+            display(Markdown(f"### Distribusi Normal"))
+            display(Markdown(f"*P(X ≤ {x}) = {p:.4f}*"))
+            display(Markdown(f"*x untuk P(X ≤ x) = {q} → {xq:.2f}*"))
+
+            plot_normal(mu, sigma, x, q)
+
+        elif dist_selector.value == 'Eksponensial':
+            display(lambda_input, x_input_exp, q_slider_exp)
+            lam = lambda_input.value
+            x = x_input_exp.value
+            q = q_slider_exp.value
+
+            p = expon.cdf(x, scale=1 / lam)
+            xq = expon.ppf(q, scale=1 / lam)
+
+            display(Markdown(f"### Distribusi Eksponensial"))
+            display(Markdown(f"*P(X ≤ {x}) = {p:.4f}*"))
+            display(Markdown(f"*x untuk P(X ≤ x) = {q} → {xq:.2f}*"))
+
+            plot_expon(lam, x, q)
+
+# Observ perubahan
+dist_selector.observe(update_ui, names='value')
+mu_input.observe(update_ui, names='value')
+sigma_input.observe(update_ui, names='value')
+x_input_norm.observe(update_ui, names='value')
+q_slider_norm.observe(update_ui, names='value')
+
+lambda_input.observe(update_ui, names='value')
+x_input_exp.observe(update_ui, names='value')
+q_slider_exp.observe(update_ui, names='value')
+
+# Tampilkan antarmuka dan output
+update_ui()
+display(output)
